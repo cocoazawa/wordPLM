@@ -43,34 +43,45 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase, Firestore, etc.
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
+const randUUID = getRandomInt(100000);
+
 const app = initializeApp(firebaseConfig);
 const firebaseApp = getApp();
 const storage = getStorage(firebaseApp, "gs://word-plm.appspot.com");
-const textRef = ref(storage, "testingSession/")
+var textRef = ref(storage, `testingSession/${randUUID}.txt`)
 
 var counterWord = 1;
 var counterWA = -1;
 var entryCounter = 0;
 
 var givenName = "";
-
+var counterCors = 0;
 var allInput = [];
 
 var quizNum = 0;
 var doneQuiz = false;
+var uploadProceedOkay = true;
+
+var startTime = 0;
+var endTime = 0;
 
 
 // Actual App
 function App() {
 
   const wordNumArray = ["1", "."];
+  const correctWords = ["upbraid", "Upbraid", "copacetic", "Copacetic", "embargo", "Embargo", "pundit", "Pundit", "caustic", "Caustic", "oxymoron", "Oxymoron",  "assay", "Assay", "myriad", "Myriad"];
   const wordActualArray = ["find fault with (someone)", "in excellent order", "an official ban on trade or other commercial activity with a particular country", "an expert in a particular subject or field who is frequently called on to give opinions about it to the public", "able to burn or corrode organic tissue by chemical action", "a figure of speech in which apparently contradictory terms appear in conjunction", "the testing of a metal or ore to determine its ingredients and quality", "a countless or extremely great number"];
   var [entryText, setEntry] = useState("");
 
   // Handling Text Input
   const handleText = (event) => {
     setEntry(event.target.value);
-    console.log(entryText);
+    console.log(`Text Handler      - Entry: ${entryText}`);
   }
 
   function enterKeyUp(e) {
@@ -85,7 +96,7 @@ function App() {
 
     givenName = entryText;
     if (entryCounter < 1) {
-      entmesRef.innerHTML = `Entered as ${givenName}! エントリーしました！`;
+      entmesRef.innerHTML = `Entered as ${givenName}!`;
       entmesRef.classList.add("entryGraphics");
       entryCounter += 3;
       inputRef.placeholder = "Enter your answer here."
@@ -97,7 +108,7 @@ function App() {
     var inputRef = document.getElementById("entryText");
 
     if (entryText.length > 0) {
-      console.log(`Uploading ${entryText}...`);
+      console.log(`Upload Text       - Uploading ${entryText}...`);
       allInput.push(entryText);
 
       entryMessage();
@@ -106,20 +117,25 @@ function App() {
       inputRef.value = "";
       inputRef.focus();
 
-      console.log(allInput);
-      console.log(`Upload Stopped - Error upload_turned_off.`);
-
-      if (doneQuiz === true) {
-        uploadString(textRef, entryText).then((snapshot) => {
-          console.log('Uploaded a raw string!');
+      console.log(`Upload Text       - All Input ${allInput}`);
+      
+      if (doneQuiz === true && uploadProceedOkay === true) {
+        var allInputString = `${allInput}`;
+        uploadString(textRef, allInputString).then((snapshot) => {
+          console.log('Upload Text       - Upload Success: Uploaded a raw string!');
         });
+        uploadProceedOkay = false;
+      } else {
+        console.log(`Upload Text       - Upload Stopped: Error upload_turned_off.`);
       }
     }
   }
 
   // Test function to toggle a div. Make sure to do "var variableName = docu..." not "variableName = docu..."
   function updateWord() {
-    console.log("Updating Word...")
+    console.log("Update Word      - Updating Word...")
+    var messageRef = document.getElementById("entryMessage");
+    var buttonRef = document.getElementById("proceedButton");
     var noteRef = document.getElementById("note"); 
     var inputRef = document.getElementById("entryText");
     var wordNumRef = document.getElementById("wordNum");
@@ -138,14 +154,29 @@ function App() {
       counterWord = 1;
       counterWA = 7;
 
-      if (quizNum === 3) {
+      endTime = Date.now();
+    } else if (counterWord === 1) {
+      if (quizNum === 1) {
         inputRef.style.display = "none";
         wordNumRef.style.display = "none";
         wordActualRef.style.display = "none";
         progCouRef.style.display = "none";
-        noteRef.innerHTML = "You have completed the quiz! Here are your statistics:"
+        buttonRef.innerHTML = "Finished ⚡️";
+        noteRef.innerHTML = "You have completed the quiz! Here are your statistics:";
+
+        const delta = endTime - startTime;
+        var deltaProc = Math.floor(delta/10);
+        deltaProc = deltaProc/100;
+
+        evaluationEngine();
+
+        messageRef.innerHTML = `Time to completion: ${deltaProc} seconds. Score: ${counterCors}/8.`;
+        messageRef.style.opacity = "1";
+        doneQuiz = true;
       }
-    } else if (counterWord === 1) {
+
+      startTime = Date.now();
+
       inputRef.placeholder = "Look at the board before you start! (yes, please type your answer here)";
       counterWord += 1;
       counterWA = 0;
@@ -155,9 +186,22 @@ function App() {
       counterWA += 1;
     }
     
-    console.log(counterWA);
+    console.log(`Update Word      - Counter: ${counterWA}`);
 
     wordActualRef.innerHTML = wordActualArray[counterWA];
+  }
+
+  function evaluationEngine() {
+    for (let i = 0; i < 9; i++) {
+      var tempVocab = allInput[i+1];
+      var tempCorrectBool = correctWords.includes(tempVocab); 
+      if (tempCorrectBool === true) {
+        console.log(`Evaluation Engine - Correct Word: ${tempVocab}`);
+        counterCors++;
+      } else {
+        console.log(`Evaluation Engine - Wrong Word: ${tempVocab}`);
+      }
+    }
   }
 
   // Return, or the actual code visible to the user. 
@@ -175,7 +219,7 @@ function App() {
         <input className="wordInput" type="text" id="entryText" name="entryText" onChange={handleText} onKeyUp={enterKeyUp} placeholder="Enter your name here."></input>
         <p className="entryMessage" id="entryMessage"></p>
         <button type="submit" className="nextButton" id="proceedButton" onClick={uploadText}>Proceed ▶</button>
-        <p className="wordNum noteC">Version 1a4. Currently 3 non-fatal errors (highVul). Coded and built with internet magic by Peter Go.</p>
+        <p className="wordNum noteC">Version 2a1. Coded and built with internet magic by Peter Go.</p>
       </div>
     </div>
   );
