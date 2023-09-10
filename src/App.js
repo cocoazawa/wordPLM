@@ -3,25 +3,6 @@ This code is written by Peter Go, and brought to life by React.
 Iteration wplm0a2 (tracked starting on alpha 1)
 
 This code is publicly available on GitHub for viewing, and pull requesting, etc. 
-
-
-Table:
-
-\begin{table}[]
-\begin{tabular}{ll}
-Word      & Definition                                                                                                     \\
-upbraid   & find fault with (someone)                                                                                      \\
-copacetic & in excellent order                                                                                             \\
-embargo   & an official ban on trade or other commercial activity with a particular country                                \\
-pundit    & an expert in a particular subject or field who is frequently called on to give opinions about it to the public \\
-caustic   & able to burn or corrode organic tissue by chemical action                                                      \\
-oxymoron  & a figure of speech in which apparently contradictory terms appear in conjunction                               \\
-assay     & the testing of a metal or ore to determine its ingredients and quality                                         \\
-myriad    & a countless or extremely great number                                                                         
-\end{tabular}
-\end{table}
-
-
 */
 
 
